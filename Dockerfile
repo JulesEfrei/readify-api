@@ -17,7 +17,9 @@ RUN apt-get install -y \
     unzip \
     libicu-dev \
     libzip-dev \
-    libpq-dev
+    libpq-dev \
+    acl \
+    openssl
 RUN docker-php-ext-install -j$(nproc) intl zip pdo_pgsql
 
 # Enable Apache modules
@@ -35,6 +37,11 @@ COPY . .
 
 # Run Composer autoloader
 RUN composer dump-autoload --no-scripts --optimize
+
+# Set permissions for JWT keys
+RUN mkdir -p config/jwt
+RUN chown -R www-data:www-data config/jwt
+RUN chmod -R ug+rwx config/jwt
 
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
