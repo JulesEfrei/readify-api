@@ -3,36 +3,60 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\LibraryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: LibraryRepository::class)]
-#[ApiResource(security: "is_granted('ROLE_USER')")]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(denormalizationContext: ['groups' => ['library:create']], security: "is_granted('ROLE_SUPER_ADMIN')"),
+        new Get(),
+        new Put(denormalizationContext: ['groups' => ['library:update']], security: "is_granted('ROLE_LIBRARY')"),
+        new Patch(denormalizationContext: ['groups' => ['library:update']], security: "is_granted('ROLE_LIBRARY')"),
+        new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
+    ],
+    normalizationContext: ['groups' => ['library:read']],
+)]
 class Library
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["library:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $city = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $address = null;
 
     #[ORM\Column(length: 15)]
+    #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $zip = null;
 
     #[ORM\Column(length: 15)]
+    #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $phone = null;
 
     #[ORM\ManyToMany(targetEntity: Book::class, mappedBy: 'libraryId')]
+    #[Groups(["library:read", "library:update"])]
     private Collection $books;
 
     public function __construct()

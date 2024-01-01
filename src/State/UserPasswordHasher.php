@@ -1,5 +1,4 @@
 <?php
-# api/src/State/UserPasswordHasher.php
 
 namespace App\State;
 
@@ -26,10 +25,6 @@ final class UserPasswordHasher implements ProcessorInterface
         $data->setPassword($hashedPassword);
         $data->eraseCredentials();
 
-        dump($data);
-        dump($operation);
-        dump($uriVariables);
-        dump($context);
         return $this->processor->process($data, $operation, $uriVariables, $context);
     }
 }
