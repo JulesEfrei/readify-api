@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -23,12 +24,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: '`user`')]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Post(validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
-        new Get(),
-        new Put(processor: UserPasswordHasher::class),
-        new Patch(processor: UserPasswordHasher::class),
-        new Delete(),
+        new GetCollection(security: "is_granted('ROLE_SUPER_ADMIN')"),
+        new Post(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
+        new Get(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
+        new Put(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
+        new Patch(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
+        new Delete(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
     ],
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:create', 'user:update']],
@@ -38,6 +39,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -59,15 +61,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $phone = null;
 
     #[ORM\OneToMany(mappedBy: 'userId', targetEntity: Review::class)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:create', 'user:update'])]
     private Collection $reviews;
 
     #[ORM\OneToOne(mappedBy: 'userId', cascade: ['persist', 'remove'])]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:create', 'user:update'])]
     private ?Borrow $borrow = null;
 
     #[ORM\OneToMany(mappedBy: 'userId', targetEntity: Reservation::class)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:create', 'user:update'])]
     private Collection $reservations;
 
     #[ORM\Column]
@@ -79,6 +81,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'json')]
     #[Groups(['user:read', 'user:create', 'user:update'])]
+    #[ApiProperty(security: "is_granted('ROLE_SUPER_ADMIN')")]
     private array $roles = [];
 
     public function __construct()

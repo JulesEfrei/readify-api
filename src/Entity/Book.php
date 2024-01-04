@@ -3,67 +3,100 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\BookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: BookRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(denormalizationContext: ['groups' => ['book:create']], security: "is_granted('ROLE_LIBRARY')"),
+        new Get(),
+        new Put(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_LIBRARY')"),
+        new Patch(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_LIBRARY')"),
+        new Delete(security: "is_granted('ROLE_LIBRARY')"),
+    ],
+    normalizationContext: ['groups' => ['book:read']],
+)]
 class Book
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['book:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $author = null;
 
     #[ORM\Column(length: 60)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $genre = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?\DateTimeInterface $publicationDate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $cover = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $publisher = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $isbn = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $language = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private ?string $edition = null;
 
     #[ORM\ManyToMany(targetEntity: Library::class, inversedBy: 'books')]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
     private Collection $libraryId;
 
-    #[ORM\ManyToOne(inversedBy: 'bookId')]
-    private ?Review $reviews = null;
+    #[ORM\OneToMany(mappedBy: 'bookId', targetEntity: Review::class)]
+    #[Groups(['book:read'])]
+    private Collection $reviews;
 
     #[ORM\OneToOne(mappedBy: 'bookId', cascade: ['persist', 'remove'])]
+//    #[Groups(['book:read', 'book:update'])]
     private ?Borrow $borrow = null;
 
     #[ORM\OneToMany(mappedBy: 'bookId', targetEntity: Reservation::class)]
+//    #[Groups(['book:read', 'book:update'])]
     private Collection $reservations;
 
     public function __construct()
     {
         $this->libraryId = new ArrayCollection();
         $this->reservations = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -215,14 +248,32 @@ class Book
         return $this;
     }
 
-    public function getReviews(): ?Review
+    /**
+     * @return Collection<int, Book>
+     */
+    public function getReviews(): Collection
     {
         return $this->reviews;
     }
 
-    public function setReviews(?Review $reviews): static
+    public function addReview(Review $review): static
     {
-        $this->reviews = $reviews;
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setBookId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReview(Review $review): static
+    {
+        if ($this->reviews->removeElement($review)) {
+            // set the owning side to null (unless already changed)
+            if ($review->getBookId() === $this) {
+                $review->setBookId(null);
+            }
+        }
 
         return $this;
     }
