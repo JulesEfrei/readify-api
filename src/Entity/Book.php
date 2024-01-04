@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -9,10 +10,9 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\Entity\Book\StateBookEnum;
+use App\Entity\Book\StatusBookEnum;
 use App\Repository\BookRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -22,9 +22,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(),
         new Post(denormalizationContext: ['groups' => ['book:create']], security: "is_granted('ROLE_LIBRARY')"),
         new Get(),
-        new Put(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_LIBRARY')"),
-        new Patch(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_LIBRARY')"),
-        new Delete(security: "is_granted('ROLE_LIBRARY')"),
+        new Get(uriTemplate: "/book/{id}/status", normalizationContext: ['groups' => ["book:read:status"]]),
+        new Put(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object.libraryId == user.libraryId"),
+        new Patch(denormalizationContext: ['groups' => ['book:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object.libraryId == user.libraryId"),
+        new Delete(security: "is_granted('ROLE_SUPER_ADMIN') or object.libraryId == user.libraryId"),
     ],
     normalizationContext: ['groups' => ['book:read']],
 )]
@@ -36,244 +37,81 @@ class Book
     #[Groups(['book:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\ManyToOne(inversedBy: 'books')]
+    #[ORM\JoinColumn(nullable: false)]
     #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $name = null;
+    public ?Library $libraryId = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\ManyToOne(inversedBy: 'books')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['book:read', 'book:create', 'book:read:status'])]
+    private ?BookRef $BookRefId = null;
+
+    #[ORM\Column(length: 50, enumType: StatusBookEnum::class)]
+    #[Groups(['book:read', 'book:create', 'book:update', 'book:read:status'])]
+    private ?StatusBookEnum $status = null;
+
+    #[ORM\Column(length: 50, enumType: StateBookEnum::class)]
     #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $author = null;
-
-    #[ORM\Column(length: 60)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $genre = null;
-
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?\DateTimeInterface $publicationDate = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $cover = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $publisher = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $description = null;
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $isbn = null;
-
-    #[ORM\Column(length: 100)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $language = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private ?string $edition = null;
-
-    #[ORM\ManyToMany(targetEntity: Library::class, inversedBy: 'books')]
-    #[Groups(['book:read', 'book:create', 'book:update'])]
-    private Collection $libraryId;
-
-    #[ORM\OneToMany(mappedBy: 'bookId', targetEntity: Review::class)]
-    #[Groups(['book:read'])]
-    private Collection $reviews;
+    #[ApiProperty(security: "is_granted('ROLE_LIBRARY')")]
+    private ?StateBookEnum $state = null;
 
     #[ORM\OneToOne(mappedBy: 'bookId', cascade: ['persist', 'remove'])]
-//    #[Groups(['book:read', 'book:update'])]
     private ?Borrow $borrow = null;
 
-    #[ORM\OneToMany(mappedBy: 'bookId', targetEntity: Reservation::class)]
-//    #[Groups(['book:read', 'book:update'])]
-    private Collection $reservations;
-
-    public function __construct()
-    {
-        $this->libraryId = new ArrayCollection();
-        $this->reservations = new ArrayCollection();
-        $this->reviews = new ArrayCollection();
-    }
+    #[ORM\Column(length: 5)]
+    #[Groups(['book:read', 'book:create', 'book:update'])]
+    private ?string $language = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): static
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    public function getAuthor(): ?string
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(string $author): static
-    {
-        $this->author = $author;
-
-        return $this;
-    }
-
-    public function getGenre(): ?string
-    {
-        return $this->genre;
-    }
-
-    public function setGenre(string $genre): static
-    {
-        $this->genre = $genre;
-
-        return $this;
-    }
-
-    public function getPublicationDate(): ?\DateTimeInterface
-    {
-        return $this->publicationDate;
-    }
-
-    public function setPublicationDate(?\DateTimeInterface $publicationDate): static
-    {
-        $this->publicationDate = $publicationDate;
-
-        return $this;
-    }
-
-    public function getCover(): ?string
-    {
-        return $this->cover;
-    }
-
-    public function setCover(?string $cover): static
-    {
-        $this->cover = $cover;
-
-        return $this;
-    }
-
-    public function getPublisher(): ?string
-    {
-        return $this->publisher;
-    }
-
-    public function setPublisher(?string $publisher): static
-    {
-        $this->publisher = $publisher;
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
-
-        return $this;
-    }
-
-    public function getIsbn(): ?string
-    {
-        return $this->isbn;
-    }
-
-    public function setIsbn(string $isbn): static
-    {
-        $this->isbn = $isbn;
-
-        return $this;
-    }
-
-    public function getLanguage(): ?string
-    {
-        return $this->language;
-    }
-
-    public function setLanguage(string $language): static
-    {
-        $this->language = $language;
-
-        return $this;
-    }
-
-    public function getEdition(): ?string
-    {
-        return $this->edition;
-    }
-
-    public function setEdition(?string $edition): static
-    {
-        $this->edition = $edition;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Library>
-     */
-    public function getLibraryId(): Collection
+    public function getLibraryId(): ?Library
     {
         return $this->libraryId;
     }
 
-    public function addLibraryId(Library $libraryId): static
+    public function setLibraryId(?Library $libraryId): static
     {
-        if (!$this->libraryId->contains($libraryId)) {
-            $this->libraryId->add($libraryId);
-        }
+        $this->libraryId = $libraryId;
 
         return $this;
     }
 
-    public function removeLibraryId(Library $libraryId): static
+    public function getBookRefId(): ?BookRef
     {
-        $this->libraryId->removeElement($libraryId);
+        return $this->BookRefId;
+    }
+
+    public function setBookRefId(?BookRef $BookRefId): static
+    {
+        $this->BookRefId = $BookRefId;
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, Book>
-     */
-    public function getReviews(): Collection
+    public function getStatus(): ?StatusBookEnum
     {
-        return $this->reviews;
+        return $this->status;
     }
 
-    public function addReview(Review $review): static
+    public function setStatus(StatusBookEnum $status): static
     {
-        if (!$this->reviews->contains($review)) {
-            $this->reviews->add($review);
-            $review->setBookId($this);
-        }
+        $this->status = $status;
 
         return $this;
     }
 
-    public function removeReview(Review $review): static
+    public function getState(): ?StateBookEnum
     {
-        if ($this->reviews->removeElement($review)) {
-            // set the owning side to null (unless already changed)
-            if ($review->getBookId() === $this) {
-                $review->setBookId(null);
-            }
-        }
+        return $this->state;
+    }
+
+    public function setState(?StateBookEnum $state): static
+    {
+        $this->state = $state;
 
         return $this;
     }
@@ -295,32 +133,14 @@ class Book
         return $this;
     }
 
-    /**
-     * @return Collection<int, Reservation>
-     */
-    public function getReservations(): Collection
+    public function getLanguage(): ?string
     {
-        return $this->reservations;
+        return $this->language;
     }
 
-    public function addReservation(Reservation $reservation): static
+    public function setLanguage(string $language): static
     {
-        if (!$this->reservations->contains($reservation)) {
-            $this->reservations->add($reservation);
-            $reservation->setBookId($this);
-        }
-
-        return $this;
-    }
-
-    public function removeReservation(Reservation $reservation): static
-    {
-        if ($this->reservations->removeElement($reservation)) {
-            // set the owning side to null (unless already changed)
-            if ($reservation->getBookId() === $this) {
-                $reservation->setBookId(null);
-            }
-        }
+        $this->language = $language;
 
         return $this;
     }

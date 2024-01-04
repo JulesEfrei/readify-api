@@ -45,7 +45,7 @@ class Review
 
     #[ORM\ManyToOne(inversedBy: "reviews")]
     #[Groups(['review:read', 'review:create', 'review:update'])]
-    private Book $bookId;
+    private BookRef $bookRefId;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
     #[ORM\JoinColumn(nullable: false)]
@@ -88,14 +88,14 @@ class Review
         return $this;
     }
 
-    public function getBookId(): ?Book
+    public function getBookRefId(): ?BookRef
     {
-        return $this->bookId;
+        return $this->bookRefId;
     }
 
-    public function setBookId(?Book $book): static
+    public function setBookRefId(?BookRef $bookRef): static
     {
-        $this->bookId = $book;
+        $this->bookRefId = $bookRef;
 
         return $this;
     }
