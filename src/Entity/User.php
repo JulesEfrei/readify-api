@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\Controller\MeController;
 use App\Repository\UserRepository;
 use App\State\UserPasswordHasher;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -27,6 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(security: "is_granted('ROLE_SUPER_ADMIN')"),
         new Post(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
         new Get(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
+        new Get(uriTemplate: "/me", controller: MeController::class, security: "is_authenticated()", read: false),
         new Put(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
         new Patch(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
