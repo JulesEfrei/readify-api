@@ -4,10 +4,11 @@ namespace App\DataFixtures;
 
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class UserFixtures extends Fixture
+class UserFixtures extends Fixture implements DependentFixtureInterface
 {
 
     public function __construct(
@@ -37,6 +38,7 @@ class UserFixtures extends Fixture
         $library->setPassword($this->passwordHasher->hashPassword($library, "motdepasse"));
         $library->setPhone("060606060606");
         $library->setRoles(["ROLE_LIBRARY"]);
+        $library->setLibraryId($this->getReference("library-1"));
         $manager->persist($library);
 
         //ROLE_USER
@@ -50,5 +52,12 @@ class UserFixtures extends Fixture
         $manager->persist($user);
 
         $manager->flush();
+    }
+
+    public function getDependencies(): array
+    {
+        return [
+            LibraryFixtures::class,
+        ];
     }
 }

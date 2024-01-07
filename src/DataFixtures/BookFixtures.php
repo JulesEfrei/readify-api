@@ -9,76 +9,49 @@ use Doctrine\Persistence\ObjectManager;
 
 class BookFixtures extends Fixture implements DependentFixtureInterface
 {
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
+        // $product = new Product();
+        // $manager->persist($product);
+
         $booksData = [
             [
-                'name' => 'Les Misérables',
-                'author' => 'Victor Hugo',
-                'genre' => 'Historical Fiction',
-                'publicationDate' => new \DateTimeImmutable('1862-01-03'),
-                'cover' => 'https://example.com/les-miserables.jpg',
-                'publisher' => 'Albert Lacroix',
-                'description' => 'A sprawling novel set in post-revolutionary France, focusing on the struggles of ex-convict Jean Valjean and his experience of redemption.',
-                'isbn' => '9780140444308',
-                'language' => 'fr',
-                'edition' => 'Penguin Classics',
                 'libraryId' => $this->getReference("library-0"),
+                'bookRefId' => $this->getReference("bookref-0"),
+                'state' => Book\StateBookEnum::NEW,
+                'status' => Book\StatusBookEnum::AVAILABLE,
+                'language' => "en"
             ],
             [
-                'name' => 'To Kill a Mockingbird',
-                'author' => 'Harper Lee',
-                'genre' => 'Southern Gothic',
-                'publicationDate' => new \DateTimeImmutable('1960-07-11'),
-                'cover' => 'https://example.com/to-kill-a-mockingbird.jpg',
-                'publisher' => 'J.B. Lippincott & Co.',
-                'description' => 'A classic novel that explores themes of racial injustice and moral growth in the American South during the 1930s.',
-                'isbn' => '0061120081',
-                'language' => 'en',
-                'edition' => 'Harper Perennial Modern Classics',
-                'libraryId' => $this->getReference("library-2"),
-            ],
-            [
-                'name' => 'The Great Gatsby',
-                'author' => 'F. Scott Fitzgerald',
-                'genre' => 'Classic Literature',
-                'publicationDate' => new \DateTimeImmutable('1925-04-10'),
-                'cover' => 'https://example.com/the-great-gatsby.jpg',
-                'publisher' => 'Charles Scribner\'s Sons',
-                'description' => 'Set in the Roaring Twenties, this novel explores the decadence and disillusionment of the American Dream through the eyes of Jay Gatsby.',
-                'isbn' => '9780743273565',
-                'language' => 'en',
-                'edition' => 'Scribner Paperback Fiction',
                 'libraryId' => $this->getReference("library-0"),
+                'bookRefId' => $this->getReference("bookref-1"),
+                'state' => Book\StateBookEnum::NEW,
+                'status' => Book\StatusBookEnum::NOT_AVAILABLE,
+                'language' => "fr"
             ],
             [
-                'name' => 'Pride and Prejudice',
-                'author' => 'Jane Austen',
-                'genre' => 'Romance',
-                'publicationDate' => new \DateTimeImmutable('1813-01-28'),
-                'cover' => 'https://example.com/pride-and-prejudice.jpg',
-                'publisher' => 'T. Egerton, Whitehall',
-                'description' => 'A classic novel of manners, the story follows the romantic entanglements of Elizabeth Bennet and Mr. Darcy in early 19th-century England.',
-                'isbn' => '9780141439518',
-                'language' => 'en',
-                'edition' => 'Penguin Classics',
                 'libraryId' => $this->getReference("library-4"),
+                'bookRefId' => $this->getReference("bookref-2"),
+                'state' => Book\StateBookEnum::CLEAN,
+                'status' => Book\StatusBookEnum::AVAILABLE,
+                'language' => "en"
+            ],
+            [
+                'libraryId' => $this->getReference("library-3"),
+                'bookRefId' => $this->getReference("bookref-3"),
+                'state' => Book\StateBookEnum::MID_DAMAGED,
+                'status' => Book\StatusBookEnum::BORROWED,
+                'language' => "fr"
             ],
         ];
 
-        foreach ($booksData as $bookData) {
+        foreach ($booksData as $index => $bookData) {
             $book = new Book();
-            $book->setName($bookData['name']);
-            $book->setAuthor($bookData['author']);
-            $book->setGenre($bookData['genre']);
-            $book->setPublicationDate($bookData['publicationDate']);
-            $book->setCover($bookData['cover']);
-            $book->setPublisher($bookData['publisher']);
-            $book->setDescription($bookData['description']);
-            $book->setIsbn($bookData['isbn']);
+            $book->setStatus($bookData['status']);
+            $book->setLibraryId($bookData['libraryId']);
+            $book->setBookRefId($bookData['bookRefId']);
+            $book->setState($bookData['state']);
             $book->setLanguage($bookData['language']);
-            $book->setEdition($bookData['edition']);
-            $book->addLibraryId($bookData['libraryId']);
 
             $manager->persist($book);
         }
@@ -90,6 +63,7 @@ class BookFixtures extends Fixture implements DependentFixtureInterface
     {
         return [
             LibraryFixtures::class,
+            BookRefFixtures::class
         ];
     }
 }

@@ -55,13 +55,16 @@ class Library
     #[Groups(["library:read", "library:create", "library:update"])]
     private ?string $phone = null;
 
-    #[ORM\ManyToMany(targetEntity: Book::class, mappedBy: 'libraryId')]
-    #[Groups(["library:read", "library:update"])]
+    #[ORM\OneToMany(mappedBy: 'libraryId', targetEntity: Book::class)]
     private Collection $books;
+
+    #[ORM\OneToMany(mappedBy: 'libraryId', targetEntity: User::class)]
+    private Collection $users;
 
     public function __construct()
     {
         $this->books = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -141,7 +144,7 @@ class Library
     {
         if (!$this->books->contains($book)) {
             $this->books->add($book);
-            $book->addLibraryId($this);
+            $book->setLibraryId($this);
         }
 
         return $this;
@@ -150,7 +153,40 @@ class Library
     public function removeBook(Book $book): static
     {
         if ($this->books->removeElement($book)) {
-            $book->removeLibraryId($this);
+            // set the owning side to null (unless already changed)
+            if ($book->getLibraryId() === $this) {
+                $book->setLibraryId(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->setLibraryId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            // set the owning side to null (unless already changed)
+            if ($user->getLibraryId() === $this) {
+                $user->setLibraryId(null);
+            }
         }
 
         return $this;

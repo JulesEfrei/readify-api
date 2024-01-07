@@ -80,9 +80,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $plainPassword = null;
 
     #[ORM\Column(type: 'json')]
-    #[Groups(['user:read', 'user:create', 'user:update'])]
     #[ApiProperty(security: "is_granted('ROLE_SUPER_ADMIN')")]
+    #[Groups(['user:read', 'user:create', 'user:update'])]
     private array $roles = [];
+
+    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ApiProperty(security: "is_granted('ROLE_SUPER_ADMIN')")]
+    #[Groups(['user:read', 'user:create', 'user:update'])]
+    public ?Library $libraryId = null;
 
     public function __construct()
     {
@@ -282,6 +287,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         $this->plainPassword = null;
+    }
+
+    public function getLibraryId(): ?Library
+    {
+        return $this->libraryId;
+    }
+
+    public function setLibraryId(?Library $libraryId): static
+    {
+        $this->libraryId = $libraryId;
+
+        return $this;
     }
 
 }
