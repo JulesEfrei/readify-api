@@ -14,6 +14,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 
 #[ORM\Entity(repositoryClass: LibraryRepository::class)]
 #[ApiResource(
@@ -26,7 +28,17 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['library:read']],
-)]
+),
+ApiFilter(SearchFilter::class, properties: [
+    'name' => 'partial',
+    'city' => 'partial',
+    'address' => 'partial',
+    'zip' => 'partial',
+    'phone' => 'partial',
+]),
+]
+
+
 class Library
 {
     #[ORM\Id]

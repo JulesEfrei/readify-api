@@ -15,6 +15,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Metadata\ApiFilter;
 
 #[ORM\Entity(repositoryClass: BookRefRepository::class)]
 #[ApiResource(
@@ -28,7 +31,26 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['bookRef:read']],
-)]
+),
+ApiFilter(
+    SearchFilter::class, properties: [
+    'name' => 'partial',
+    'author' => 'partial',
+    'genre' => 'partial',
+    'publisher' => 'partial',
+    'isbn' => 'partial',
+    'edition' => 'partial',
+]),
+ApiFilter(DateFilter::class, properties: [
+    'created_at',
+]),
+]
+
+
+
+
+
+
 class BookRef
 {
     #[ORM\Id]
