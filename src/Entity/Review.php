@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
@@ -26,6 +27,19 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['review:read']],
+)]
+
+//-- Subresource's --//
+/* Book */
+#[ApiResource(
+    uriTemplate: 'bookRef/{id}/review',
+    operations: [
+        new GetCollection()
+    ],
+    uriVariables: [
+        'id' => new Link(fromProperty: 'reviews', fromClass: BookRef::class)
+    ],
+    normalizationContext: ["groups" => 'review:read']
 )]
 class Review
 {
