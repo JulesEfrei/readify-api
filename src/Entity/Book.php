@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
@@ -28,6 +29,27 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN') or object.libraryId == user.libraryId"),
     ],
     normalizationContext: ['groups' => ['book:read']],
+)]
+//-- Subresource's --//
+/* Book */
+#[ApiResource(
+    uriTemplate: 'library/{id}/book',
+    operations: [
+        new GetCollection()
+    ],
+    uriVariables: [
+        'id' => new Link(fromProperty: 'books', fromClass: Library::class)
+    ]
+)]
+/* BookRef */
+#[ApiResource(
+    uriTemplate: 'bookRef/{id}/book',
+    operations: [
+        new GetCollection()
+    ],
+    uriVariables: [
+        'id' => new Link(fromProperty: 'books', fromClass: BookRef::class)
+    ]
 )]
 class Book
 {

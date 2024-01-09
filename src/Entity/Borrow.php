@@ -2,15 +2,18 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Odm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use App\Controller\ExpandDueDateActionController;
+use App\Controller\MeBorrowController;
 use App\Repository\BorrowRepository;
 use App\State\BorrowProcessor;
 use Doctrine\DBAL\Types\Types;
@@ -23,7 +26,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(security: "is_granted('ROLE_LIBRARY')"),
         new Post(denormalizationContext: ['groups' => ['borrow:create']], security: "is_granted('ROLE_USER')", processor: BorrowProcessor::class),
-        new Get(),
+        new Get(security: "is_granted('ROLE_USER') and object.userId == user or is_granted('ROLE_LIBRARY')"),
         new Post(
             uriTemplate: "/borrow/{id}/expand",
             controller: ExpandDueDateActionController::class,
@@ -47,6 +50,26 @@ use Symfony\Component\Serializer\Attribute\Groups;
     ],
     normalizationContext: ['groups' => ['borrow:read']],
 )]
+//-- Subresource's --//
+    /* User */
+#[ApiResource(
+    uriTemplate: 'user/{id}/borrow',
+    operations: [
+        new GetCollection(
+            security: "is_granted('ROLE_LIBRARY')"
+        )
+    ],
+    uriVariables: [
+        'id' => new Link(fromProperty: 'borrow', fromClass: User::class)
+    ],
+)]
+/* me */
+#[ApiResource(
+    uriTemplate: 'me/borrow',
+    operations: [
+        new GetCollection(controller: MeBorrowController::class)
+    ]
+)]
 class Borrow
 {
     #[ORM\Id]
@@ -68,7 +91,7 @@ class Borrow
     #[Groups(['borrow:read', 'borrow:create', "book:read"])]
     public ?User $userId = null;
 
-    #[ORM\OneToOne(inversedBy: 'borrow', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'borrow', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['borrow:read', 'borrow:create'])]
     private ?Book $bookId = null;

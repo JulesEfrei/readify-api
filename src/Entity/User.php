@@ -27,7 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(security: "is_granted('ROLE_SUPER_ADMIN')"),
         new Post(denormalizationContext: ["groups" => ['user:create']], validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
-        new Get(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
+        new Get(),
         new Get(uriTemplate: "/me", controller: MeController::class, security: "is_authenticated()", read: false),
         new Put(denormalizationContext: ["groups" => ['user:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
         new Patch(denormalizationContext: ["groups" => ['user:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),

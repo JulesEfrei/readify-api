@@ -77,7 +77,6 @@ class BookRef
     #[Groups(['bookRef:read'])]
     private Collection $reviews;
 
-//    Get as Subresource
     #[ORM\OneToMany(mappedBy: 'BookRefId', targetEntity: Book::class, orphanRemoval: true)]
     private Collection $books;
 
