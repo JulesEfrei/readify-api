@@ -26,15 +26,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(security: "is_granted('ROLE_SUPER_ADMIN')"),
-        new Post(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
+        new Post(denormalizationContext: ["groups" => ['user:create']], validationContext: ['groups' => ['Default', 'user:create']], processor: UserPasswordHasher::class),
         new Get(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
         new Get(uriTemplate: "/me", controller: MeController::class, security: "is_authenticated()", read: false),
-        new Put(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
-        new Patch(security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
+        new Put(denormalizationContext: ["groups" => ['user:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
+        new Patch(denormalizationContext: ["groups" => ['user:update']], security: "is_granted('ROLE_SUPER_ADMIN') or object == user", processor: UserPasswordHasher::class),
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN') or object == user"),
     ],
     normalizationContext: ['groups' => ['user:read']],
-    denormalizationContext: ['groups' => ['user:create', 'user:update']],
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -63,15 +62,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $phone = null;
 
     #[ORM\OneToMany(mappedBy: 'userId', targetEntity: Review::class)]
-    #[Groups(['user:read', 'user:create', 'user:update'])]
+    #[Groups(['user:read', 'user:update'])]
     private Collection $reviews;
 
     #[ORM\OneToOne(mappedBy: 'userId', cascade: ['persist', 'remove'])]
-    #[Groups(['user:read', 'user:create', 'user:update'])]
+    #[Groups(['user:read', 'user:update'])]
     private ?Borrow $borrow = null;
 
     #[ORM\OneToMany(mappedBy: 'userId', targetEntity: Reservation::class)]
-    #[Groups(['user:read', 'user:create', 'user:update'])]
+    #[Groups(['user:read', 'user:update'])]
     private Collection $reservations;
 
     #[ORM\Column]
