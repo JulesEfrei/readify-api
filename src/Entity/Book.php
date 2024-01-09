@@ -57,6 +57,8 @@ class Book
     private ?StateBookEnum $state = null;
 
     #[ORM\OneToOne(mappedBy: 'bookId', cascade: ['persist', 'remove'])]
+    #[ApiProperty(security: "is_granted('ROLE_LIBRARY')")]
+    #[Groups(['book:read'])]
     private ?Borrow $borrow = null;
 
     #[ORM\Column(length: 5)]

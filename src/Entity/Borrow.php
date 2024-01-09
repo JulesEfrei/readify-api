@@ -3,31 +3,74 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\RequestBody;
+use App\Controller\ExpandDueDateActionController;
 use App\Repository\BorrowRepository;
+use App\State\BorrowProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: BorrowRepository::class)]
-#[ApiResource]
+#[ORM\HasLifecycleCallbacks]
+#[ApiResource(
+    operations: [
+        new GetCollection(security: "is_granted('ROLE_LIBRARY')"),
+        new Post(denormalizationContext: ['groups' => ['borrow:create']], security: "is_granted('ROLE_USER')", processor: BorrowProcessor::class),
+        new Get(),
+        new Post(
+            uriTemplate: "/borrow/{id}/expand",
+            controller: ExpandDueDateActionController::class,
+            openapi: new Operation(
+                summary: "Expand the due date to one week and retrieves the Borrow resource",
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
+                        'application/ld+json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => []
+                            ]
+                        ]
+                    ])
+                )
+            ),
+            security: "is_granted('ROLE_USER') and object.userId == user or is_granted('ROLE_LIBRARY')"
+        ),
+        new Patch(denormalizationContext: ['groups' => ['borrow:update']], security: "is_granted('ROLE_LIBRARY')"),
+        new Delete(security: "is_granted('ROLE_USER') and object.userId == user or is_granted('ROLE_LIBRARY')"),
+    ],
+    normalizationContext: ['groups' => ['borrow:read']],
+)]
 class Borrow
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['borrow:read', "book:read"])]
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Groups(['borrow:read', "book:read"])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['borrow:read', 'borrow:update', "book:read"])]
     private ?\DateTimeInterface $dueDate = null;
 
-    #[ORM\OneToOne(inversedBy: 'borrow', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'borrow', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $userId = null;
+    #[Groups(['borrow:read', 'borrow:create', "book:read"])]
+    public ?User $userId = null;
 
     #[ORM\OneToOne(inversedBy: 'borrow', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['borrow:read', 'borrow:create'])]
     private ?Book $bookId = null;
 
     public function getId(): ?int
@@ -40,9 +83,10 @@ class Borrow
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    #[ORM\PrePersist]
+    public function setCreatedAt(): static
     {
-        $this->createdAt = $createdAt;
+        $this->createdAt = new \DateTimeImmutable();
 
         return $this;
     }
@@ -52,11 +96,9 @@ class Borrow
         return $this->dueDate;
     }
 
-    public function setDueDate(\DateTimeInterface $dueDate): static
+    public function setDueDate(\DateTimeInterface $dueDate): void
     {
         $this->dueDate = $dueDate;
-
-        return $this;
     }
 
     public function getUserId(): ?User

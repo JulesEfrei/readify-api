@@ -19,7 +19,7 @@ class ReviewStateProcessor implements ProcessorInterface
     {
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): void
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
 
         if ($operation instanceof Post) {
@@ -29,7 +29,7 @@ class ReviewStateProcessor implements ProcessorInterface
                 $data->setIsBoosted(true);
             }
 
-            $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+            return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
         }
 
         if ($this->security->isGranted("ROLE_SUPER_ADMIN") || $this->security->getUser()->getId() === $data->getUserId()->getId()) {
@@ -38,7 +38,7 @@ class ReviewStateProcessor implements ProcessorInterface
                 $this->removeProcessor->process($data, $operation, $uriVariables, $context);
             }
 
-            $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+            return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
         }
 
     }
