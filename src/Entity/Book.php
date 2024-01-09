@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -51,6 +53,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
         'id' => new Link(fromProperty: 'books', fromClass: BookRef::class)
     ]
 )]
+#[ApiFilter(SearchFilter::class, properties: [
+    "status" => "iexact",
+])
+]
 class Book
 {
     #[ORM\Id]
@@ -67,7 +73,7 @@ class Book
     #[ORM\ManyToOne(inversedBy: 'books')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['book:read', 'book:create', 'book:read:status'])]
-    private ?BookRef $BookRefId = null;
+    private ?BookRef $bookRefId = null;
 
     #[ORM\Column(length: 50, enumType: StatusBookEnum::class)]
     #[Groups(['book:read', 'book:create', 'book:update', 'book:read:status'])]
@@ -106,12 +112,12 @@ class Book
 
     public function getBookRefId(): ?BookRef
     {
-        return $this->BookRefId;
+        return $this->bookRefId;
     }
 
-    public function setBookRefId(?BookRef $BookRefId): static
+    public function setBookRefId(?BookRef $bookRef): static
     {
-        $this->BookRefId = $BookRefId;
+        $this->bookRefId = $bookRef;
 
         return $this;
     }

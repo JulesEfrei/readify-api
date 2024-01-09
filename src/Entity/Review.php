@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -27,8 +28,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['review:read']],
+    order: ['isBoosted' => 'DESC']
 )]
-
 //-- Subresource's --//
 /* Book */
 #[ApiResource(
@@ -39,7 +40,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
     uriVariables: [
         'id' => new Link(fromProperty: 'reviews', fromClass: BookRef::class)
     ],
-    normalizationContext: ["groups" => 'review:read']
+    normalizationContext: ["groups" => 'review:read'],
+    order: ['isBoosted' => 'DESC']
 )]
 class Review
 {
@@ -71,6 +73,8 @@ class Review
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
+    #[ApiProperty(security: "is_granted('ROLE_SUPER_ADMIN')")]
+    #[Groups(['review:read', 'review:create', 'review:update'])]
     private ?bool $isBoosted = false;
 
     public function getId(): ?int
