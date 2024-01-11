@@ -8,7 +8,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
-#[ApiResource]
+//#[ApiResource]
 class Reservation
 {
     #[ORM\Id]
@@ -24,11 +24,11 @@ class Reservation
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Book $bookId = null;
+    private ?User $userId = null;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $userId = null;
+    private ?BookRef $bookRefId = null;
 
     public function getId(): ?int
     {
@@ -59,18 +59,6 @@ class Reservation
         return $this;
     }
 
-    public function getBookId(): ?Book
-    {
-        return $this->bookId;
-    }
-
-    public function setBookId(?Book $bookId): static
-    {
-        $this->bookId = $bookId;
-
-        return $this;
-    }
-
     public function getUserId(): ?User
     {
         return $this->userId;
@@ -79,6 +67,18 @@ class Reservation
     public function setUserId(?User $userId): static
     {
         $this->userId = $userId;
+
+        return $this;
+    }
+
+    public function getBookRefId(): ?BookRef
+    {
+        return $this->bookRefId;
+    }
+
+    public function setBookRefId(?BookRef $bookRefId): static
+    {
+        $this->bookRefId = $bookRefId;
 
         return $this;
     }

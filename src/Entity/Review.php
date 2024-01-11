@@ -2,38 +2,80 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\ReviewRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\State\ReviewStateProcessor;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ReviewRepository::class)]
-#[ApiResource]
+#[ORM\HasLifecycleCallbacks]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(denormalizationContext: ['groups' => ['review:create']], security: "is_granted('ROLE_USER')", processor: ReviewStateProcessor::class),
+        new Get(),
+        new Put(denormalizationContext: ['groups' => ['review:update']], security: "is_granted('ROLE_USER')", processor: ReviewStateProcessor::class),
+        new Patch(denormalizationContext: ['groups' => ['review:update']], security: "is_granted('ROLE_USER')", processor: ReviewStateProcessor::class),
+        new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
+    ],
+    normalizationContext: ['groups' => ['review:read']],
+    order: ['isBoosted' => 'DESC']
+)]
+//-- Subresource's --//
+/* Book */
+#[ApiResource(
+    uriTemplate: 'bookRef/{id}/review',
+    operations: [
+        new GetCollection()
+    ],
+    uriVariables: [
+        'id' => new Link(fromProperty: 'reviews', fromClass: BookRef::class)
+    ],
+    normalizationContext: ["groups" => 'review:read'],
+    order: ['isBoosted' => 'DESC']
+)]
 class Review
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['review:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['review:read', 'review:create', 'review:update'])]
     private ?string $comment = null;
 
     #[ORM\Column]
+    #[Groups(['review:read', 'review:create', 'review:update'])]
     private ?float $rating = null;
 
-    #[ORM\OneToMany(mappedBy: 'reviews', targetEntity: Book::class)]
-    private Collection $bookId;
+    #[ORM\ManyToOne(inversedBy: "reviews")]
+    #[Groups(['review:read', 'review:create', 'review:update'])]
+    private BookRef $bookRefId;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['review:read'])]
     private ?User $userId = null;
 
-    public function __construct()
-    {
-        $this->bookId = new ArrayCollection();
-    }
+    #[ORM\Column]
+    #[Groups(['review:read'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column]
+    #[ApiProperty(security: "is_granted('ROLE_SUPER_ADMIN')")]
+    #[Groups(['review:read', 'review:create', 'review:update'])]
+    private ?bool $isBoosted = false;
 
     public function getId(): ?int
     {
@@ -64,32 +106,14 @@ class Review
         return $this;
     }
 
-    /**
-     * @return Collection<int, Book>
-     */
-    public function getBookId(): Collection
+    public function getBookRefId(): ?BookRef
     {
-        return $this->bookId;
+        return $this->bookRefId;
     }
 
-    public function addBookId(Book $bookId): static
+    public function setBookRefId(?BookRef $bookRef): static
     {
-        if (!$this->bookId->contains($bookId)) {
-            $this->bookId->add($bookId);
-            $bookId->setReviews($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBookId(Book $bookId): static
-    {
-        if ($this->bookId->removeElement($bookId)) {
-            // set the owning side to null (unless already changed)
-            if ($bookId->getReviews() === $this) {
-                $bookId->setReviews(null);
-            }
-        }
+        $this->bookRefId = $bookRef;
 
         return $this;
     }
@@ -102,6 +126,29 @@ class Review
     public function setUserId(?User $userId): static
     {
         $this->userId = $userId;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAt(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getIsBoosted(): ?bool
+    {
+        return $this->isBoosted;
+    }
+
+    public function setIsBoosted(bool $isBoosted): static
+    {
+        $this->isBoosted = $isBoosted;
 
         return $this;
     }
