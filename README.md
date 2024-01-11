@@ -138,6 +138,7 @@ Here is the roadmap of the project. Checked flags mean the features is out and u
 - [x] Borrow system
 - [x] Basic filter
 - [x] Access to sub-resources
+- [x] Get status of a book
 - [ ] Advanced search
   - [ ] User history
 - [ ] Reservation system
