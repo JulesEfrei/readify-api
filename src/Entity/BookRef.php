@@ -31,26 +31,19 @@ use ApiPlatform\Metadata\ApiFilter;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['bookRef:read']],
-),
-ApiFilter(
+)]
+#[ApiFilter(
     SearchFilter::class, properties: [
-    'name' => 'partial',
-    'author' => 'partial',
-    'genre' => 'partial',
-    'publisher' => 'partial',
-    'isbn' => 'partial',
-    'edition' => 'partial',
-]),
-ApiFilter(DateFilter::class, properties: [
-    'created_at',
-]),
-]
-
-
-
-
-
-
+    'name' => 'ipartial',
+    'author' => 'ipartial',
+    'genre' => 'ipartial',
+    'publisher' => 'ipartial',
+    'isbn' => 'exact',
+    'edition' => 'ipartial',
+])]
+#[ApiFilter(DateFilter::class, properties: [
+    'publicationDate',
+])]
 class BookRef
 {
     #[ORM\Id]
@@ -99,7 +92,7 @@ class BookRef
     #[Groups(['bookRef:read'])]
     private Collection $reviews;
 
-    #[ORM\OneToMany(mappedBy: 'BookRefId', targetEntity: Book::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'bookRefId', targetEntity: Book::class, orphanRemoval: true)]
     private Collection $books;
 
     #[ORM\OneToMany(mappedBy: 'bookRefId', targetEntity: Reservation::class, orphanRemoval: true)]

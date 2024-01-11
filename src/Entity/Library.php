@@ -28,17 +28,15 @@ use ApiPlatform\Metadata\ApiFilter;
         new Delete(security: "is_granted('ROLE_SUPER_ADMIN')"),
     ],
     normalizationContext: ['groups' => ['library:read']],
-),
-ApiFilter(SearchFilter::class, properties: [
-    'name' => 'partial',
-    'city' => 'partial',
-    'address' => 'partial',
-    'zip' => 'partial',
-    'phone' => 'partial',
-]),
+)]
+#[ApiFilter(SearchFilter::class, properties: [
+    'name' => 'ipartial',
+    'city' => 'ipartial',
+    'address' => 'ipartial',
+    'zip' => 'ipartial',
+    'phone' => 'exact',
+])
 ]
-
-
 class Library
 {
     #[ORM\Id]
