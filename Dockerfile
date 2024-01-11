@@ -1,14 +1,14 @@
 # Use an official PHP runtime as a parent image
 FROM php:8.2-apache as base
 
-# Set the proper permissions
-RUN chown -R www-data:www-data /var
-
 # Set the working directory
 WORKDIR /var/www/html
 
 # Copy composer.lock and composer.json to the working directory
 COPY composer.lock composer.json /var/www/html/
+
+# Set the proper permissions
+RUN chown -R www-data:www-data /var
 
 # Install any needed packages
 RUN apt-get update
